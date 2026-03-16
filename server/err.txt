@@ -1,0 +1,5 @@
+﻿src/services/message.service.ts(40,9): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'string | null' is not assignable to type 'StringQueryTypeCasting | { readonly schemaName?: "ObjectId" | undefined; auto?: ((turnOn: boolean) => ObjectId) | undefined; $conditionalHandlers?: { ...; } | undefined; ... 23 more ...; validateAll?: ((validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId) | undefined; } | undefined'.
+      Type 'null' is not assignable to type 'StringQueryTypeCasting | { readonly schemaName?: "ObjectId" | undefined; auto?: ((turnOn: boolean) => ObjectId) | undefined; $conditionalHandlers?: { ...; } | undefined; ... 23 more ...; validateAll?: ((validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId) | undefined; } | undefined'.
+src/services/message.service.ts(42,22): error TS2339: Property 'populate' does not exist on type 'never'.

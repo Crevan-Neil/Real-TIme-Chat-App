@@ -1,4 +1,5 @@
 import { ErrorRequestHandler } from "express"
+import { ZodError } from "zod";
 import { HTTPSTATUS } from "../config/http.config";
 import { AppError, ErrorCodes } from "../utils/app-error";
 
@@ -9,6 +10,21 @@ export const errorHandler: ErrorRequestHandler= (
     next
 ): any =>{
     console.log(`Error occured: ${req.path}`, error);
+
+    if (error instanceof SyntaxError && "body" in error) {
+        return res.status(HTTPSTATUS.BAD_REQUEST).json({
+            message: "Invalid JSON",
+            errorCode: ErrorCodes.ERR_BAD_REQUEST,
+        });
+    }
+
+    if (error instanceof ZodError) {
+        return res.status(HTTPSTATUS.BAD_REQUEST).json({
+            message: "Validation Error",
+            issues: error.issues,
+            errorCode: ErrorCodes.ERR_BAD_REQUEST,
+        });
+    }
 
     if (error instanceof AppError){
         return res.status(error.statusCode).json({

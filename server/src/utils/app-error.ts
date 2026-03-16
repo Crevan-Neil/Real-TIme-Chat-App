@@ -48,7 +48,7 @@ export class UnauthorizedException extends AppError{
 }
 
 export class ForbiddenException extends AppError{
-    constructor(message: "Forbidden Access"){
+    constructor(message: string= "Forbidden Access"){
         super(message, HTTPSTATUS.FORBIDDEN, ErrorCodes.ERR_FORBIDDEN);
     }
 }
