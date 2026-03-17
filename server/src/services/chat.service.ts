@@ -1,3 +1,4 @@
+import { emitNewChatToParticipants } from "../lib/socket";
 import chatModel from "../models/chat.model";
 import messageModel from "../models/message.model";
 import userModel from "../models/user.model";
@@ -48,7 +49,15 @@ export const createChatService = async (
             createdBy: userId
         });
 
-        return await chat.populate("participants", "name avatar");
+
+
+        const populatedChat= await chat.populate("participants", "name avatar");
+        const participantIdStrings= populatedChat?.participants?.map((p)=>{
+            return p._id?.toString();
+        });
+
+        emitNewChatToParticipants(participantIdStrings, populatedChat);
+        return chat;
     }
 
     throw new BadRequestException("Invalid chat creation parameters. Provide participantId for private chat or groupName and participants for group chat.");
@@ -96,4 +105,15 @@ export const getSingleChatService=async(chatId:string, userId:string)=>{
         chat,
         messages
     }
+}
+
+export const validateChatParticipant= async(chatId:string, userId:string)=>{
+    const chat= await chatModel.findOne({
+        _id:chatId,
+        participants:{
+            $in:[userId]
+        }
+    })
+    if(!chat)throw new BadRequestException("User not a participant in chat");
+    return chat;
 }
