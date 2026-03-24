@@ -8,6 +8,7 @@ export interface ChatDocument extends Document {
     createdBy: mongoose.Types.ObjectId | string;
     createdAt: Date;
     updatedAt: Date;
+    isAiChat?: boolean;
 }
 
 const chatSchema = new Schema<ChatDocument>({
@@ -33,10 +34,27 @@ const chatSchema = new Schema<ChatDocument>({
         type: mongoose.Schema.Types.ObjectId,
         ref: "user",
         required: true
+    },
+    isAiChat:{
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
 })
 
-const chatModel = mongoose.model("chat", chatSchema);
+chatSchema.pre("save", async function(this: ChatDocument){
+    if(this.isNew){
+        const user= mongoose.model("user");
+        const participants=await user.find({
+            _id: {$in: this.participants},
+            isAI: true
+        })
+        if(participants.length>0){
+            this.isAiChat=true;
+        }
+    }
+})
+
+const chatModel = mongoose.model<ChatDocument>("chat", chatSchema);
 export default chatModel;

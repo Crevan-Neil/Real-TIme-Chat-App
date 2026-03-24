@@ -2,7 +2,7 @@ import { Server as HTTPServer } from "http";
 import { Server, type Socket } from "socket.io";
 import { Env } from "../config/env.config";
 import jwt from "jsonwebtoken";
-import { string } from "zod";
+import { boolean, string } from "zod";
 import { validateChatParticipant } from "../services/chat.service";
 
 interface AuthenticatedSocket extends Socket{
@@ -107,5 +107,41 @@ export const emitNewMessageToChatRoom=(senderId:string, chatId: string, message:
         io.to(`chat:${chatId}`).except(senderSocketId).emit("message:new", message);
     } else{
         io.to(`chat:${chatId}`).emit("message:new", message);
+    }
+}
+
+export const emitChatAI=({
+    chatId,
+    chunk=null,
+    sender,
+    done=false,
+    message=null
+}: {
+    chatId:string;
+    chunk?:string|null;
+    sender?: any;
+    done?: boolean;
+    message?: any;
+})=>{
+    const io=getIO();
+    if(chunk?.trim() && !done){
+        io.to(`chat:${chatId}`).emit("chat:ai",{
+            chatId,
+            chunk,
+            done:false,
+            message:null,
+            sender
+        })
+        return;
+    }
+    if(done){
+        io.to(`chat:${chatId}`).emit("chat:ai",{
+            chatId,
+            chunk:null,
+            done:true,
+            message,
+            sender
+        })
+        return;
     }
 }

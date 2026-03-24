@@ -1,13 +1,16 @@
 import userModel from "../models/user.model";
-import { NotFoundException, UnauthorizedException } from "../utils/app-error";
+import { NotFoundException, UnauthorizedException, ConflictException } from "../utils/app-error";
 import { LoginSchemaType, RegisterSchemaType } from "../validators/auth.validator";
 
 export const registerService= async(body: RegisterSchemaType)=>{
     const {email}=body
     const existingUser= await userModel.findOne({email});
-    if(existingUser)throw new UnauthorizedException("User already exists");
+    if(existingUser)throw new ConflictException("User already exists");
     const newUser= new userModel({
-        ...body,
+        name: body.name,
+        email: body.email,
+        password: body.password,
+        avatar: body.avatar
     })
     await newUser.save();
     return newUser;

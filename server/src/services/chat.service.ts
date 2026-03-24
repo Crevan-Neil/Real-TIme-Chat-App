@@ -16,34 +16,38 @@ export const createChatService = async (
     }
 ) => {
     const { participantId, isGroup, participants, groupName } = body;
-    let chat;
     let allParticipantIds: string[] = [];
 
     if (isGroup && participants?.length && groupName) {
         allParticipantIds = [userId, ...participants];
-        chat = await chatModel.create({
+        const chat = await chatModel.create({
             participants: allParticipantIds,
             isGroup: true,
             groupName,
             createdBy: userId
         });
         
-        return await chat.populate("participants", "name avatar");
+        const populatedChat = await chat.populate("participants", "name avatar");
+        const participantIdStrings = populatedChat?.participants?.map((p: any) => p._id?.toString());
+        
+        emitNewChatToParticipants(participantIdStrings, populatedChat);
+        return populatedChat;
     } else if (participantId) {
         const otherUser = await userModel.findById(participantId);
         if (!otherUser) throw new NotFoundException("User not found");
 
         allParticipantIds = [userId, participantId];
         const existingChat = await chatModel.findOne({
+            isGroup: false,
             participants: {
                 $all: allParticipantIds,
                 $size: 2
             }
-        }).populate("participants", "name avatar")
+        }).populate("participants", "name avatar isAI")
 
         if (existingChat) return existingChat;
 
-        chat = await chatModel.create({
+        const chat = await chatModel.create({
             participants: allParticipantIds,
             isGroup: false,
             createdBy: userId
@@ -51,13 +55,13 @@ export const createChatService = async (
 
 
 
-        const populatedChat= await chat.populate("participants", "name avatar");
-        const participantIdStrings= populatedChat?.participants?.map((p)=>{
+        const populatedChat= await chat.populate("participants", "name avatar isAI");
+        const participantIdStrings= populatedChat?.participants?.map((p: any)=>{
             return p._id?.toString();
         });
 
         emitNewChatToParticipants(participantIdStrings, populatedChat);
-        return chat;
+        return populatedChat;
     }
 
     throw new BadRequestException("Invalid chat creation parameters. Provide participantId for private chat or groupName and participants for group chat.");
@@ -69,7 +73,7 @@ export const getUserChatsService= async(userId: string)=>{
         participants:{
             $in: [userId]
         },
-    }).populate("participants", "name avatar")
+    }).populate("participants", "name avatar isAI")
     .populate({
         path: "lastMessage",
         populate:{
@@ -83,20 +87,19 @@ export const getUserChatsService= async(userId: string)=>{
 
 
 export const getSingleChatService=async(chatId:string, userId:string)=>{
-    const chat= await chatModel.findById(chatId);
+    const chat= await chatModel.findOne({
+        _id: chatId,
+        participants:{$in: [userId]}
+    }).populate("participants", "name avatar isAI");
     if(!chat) throw new NotFoundException("Chat not found");
 
-    if (!chat.participants.includes(userId as any)) {
-        throw new ForbiddenException("You are not a participant in this chat");
-    }
-
-    const messages= await messageModel.find({chatId}).populate("sender", "name avatar")
+    const messages= await messageModel.find({chatId}).populate("sender", "name avatar isAI")
     .populate({
         path: "replyTo",
         select: "content image sender",
         populate:({
             path: "sender",
-            select: "name avatar"
+            select: "name avatar isAI"
         })
     })
     .sort({createdAt:1});
