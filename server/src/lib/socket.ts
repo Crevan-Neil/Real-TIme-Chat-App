@@ -11,10 +11,11 @@ interface AuthenticatedSocket extends Socket{
 
 let io:Server|null =null;
 
-const onlineUsers=new Map<string,string>();
+const onlineUsers=new Map<string,Set<string>>();
 
 export const initializeSocket= (httpServer:HTTPServer)=>{
     io=new Server(httpServer,{
+        maxHttpBufferSize: 1e8,
         cors:{
             origin: Env.FRONTEND_ORIGIN,
             methods: ["GET", "POST"],
@@ -25,7 +26,12 @@ export const initializeSocket= (httpServer:HTTPServer)=>{
         try{
             const rawCookie= socket.handshake.headers.cookie;
             if(!rawCookie) return next(new Error("Unauthorized"));
-            const token=rawCookie?.split("=")?.[1]?.trim();
+            const cookies = rawCookie.split(';').reduce((acc, current) => {
+                const [key, ...values] = current.trim().split('=');
+                if (key) acc[key] = values.join('=');
+                return acc;
+            }, {} as Record<string, string>);
+            const token= cookies["accessToken"];
             if(!token)return next(new Error("Unauthorized"));
             const decodedToken= jwt.verify(token,Env.JWT_SECRET)as {userId:string;}
             if(!decodedToken)return next(new Error("Unauthorized"));
@@ -44,7 +50,10 @@ export const initializeSocket= (httpServer:HTTPServer)=>{
         const newSocketId= socket.id;
         console.log("socket connected", {userId, newSocketId});
         //register socket for the user
-        onlineUsers.set(userId, newSocketId);
+        if(!onlineUsers.has(userId)){
+            onlineUsers.set(userId, new Set());
+        }
+        onlineUsers.get(userId)?.add(newSocketId);
         //broadcast online users to all sockets
         io?.emit("online:users", Array.from(onlineUsers.keys()));
         //create personal room for user
@@ -68,8 +77,12 @@ export const initializeSocket= (httpServer:HTTPServer)=>{
         })
 
         socket.on("disconnect", ()=>{
-            if(onlineUsers.get(userId)===newSocketId){
-                if(userId) onlineUsers.delete(userId);
+            if(userId && onlineUsers.has(userId)){
+                const userSockets = onlineUsers.get(userId);
+                userSockets?.delete(newSocketId);
+                if(userSockets?.size === 0){
+                    onlineUsers.delete(userId);
+                }
                 io?.emit("online:users", Array.from(onlineUsers.keys()));
                 console.log("Socket is disconnected",{
                     userId, newSocketId
@@ -102,9 +115,9 @@ export const emitLastMessageToParticipants=(participantIds:string[], chatId:stri
 
 export const emitNewMessageToChatRoom=(senderId:string, chatId: string, message: any)=>{
     const io=getIO();
-    const senderSocketId= onlineUsers.get(senderId);
-    if(senderSocketId){
-        io.to(`chat:${chatId}`).except(senderSocketId).emit("message:new", message);
+    const senderSocketIds= onlineUsers.get(senderId);
+    if(senderSocketIds && senderSocketIds.size > 0){
+        io.to(`chat:${chatId}`).except(Array.from(senderSocketIds)).emit("message:new", message);
     } else{
         io.to(`chat:${chatId}`).emit("message:new", message);
     }

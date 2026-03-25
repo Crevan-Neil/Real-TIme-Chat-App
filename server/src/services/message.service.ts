@@ -142,7 +142,14 @@ async function getAIResponse(chatId: string, userId: string){
         done: true,
         message: aiMessage
     })
-    emitLastMessageToParticipants([userId], chatId, aiMessage);
+    
+    // Notify all participants about the new last message
+    const chat = await chatModel.findById(chatId);
+    if(chat){
+        const allParticipantIds = chat.participants.map(id => id.toString());
+        emitLastMessageToParticipants(allParticipantIds, chatId, aiMessage);
+    }
+    
     return aiMessage;
 }
 
