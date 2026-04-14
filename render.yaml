@@ -1,0 +1,47 @@
+services:
+  # Backend Server
+  - type: web
+    name: chat-server
+    runtime: docker
+    dockerContext: server
+    dockerfilePath: server/Dockerfile
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false # User must set this in Render Dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        fromService:
+          type: web
+          name: chat-client
+          property: url
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chat-redis
+          property: connectionString
+      # Add other keys like CLOUDINARY if needed
+      # - key: CLOUDINARY_CLOUD_NAME
+      #   sync: false
+
+  # Frontend Client
+  - type: web
+    name: chat-client
+    runtime: docker
+    dockerContext: client
+    dockerfilePath: client/Dockerfile
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: chat-server
+          property: url
+
+  # Managed Redis
+  - type: redis
+    name: chat-redis
+    ipAllowList: [] # Only allow internal traffic

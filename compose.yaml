@@ -1,5 +1,5 @@
 services:
-  redis:
+  chat-redis:
     image: redis:7-alpine
     container_name: chat-redis
     ports:
@@ -8,7 +8,7 @@ services:
     networks:
       - app-network
 
-  server:
+  chat-server:
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -19,10 +19,10 @@ services:
       - ./server/.env
     environment:
       # Override localhost values for Docker networking
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://chat-redis:6379
       - FRONTEND_ORIGIN=http://localhost
     depends_on:
-      - redis
+      - chat-redis
     restart: always
     networks:
       - app-network
@@ -35,7 +35,7 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - server
+      - chat-server
     restart: always
     networks:
       - app-network
