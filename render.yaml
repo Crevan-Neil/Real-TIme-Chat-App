@@ -11,14 +11,11 @@ services:
       - key: NODE_ENV
         value: production
       - key: MONGO_URI
-        sync: false # User must set this in Render Dashboard
+        sync: false # Set this in the Render Dashboard
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_ORIGIN
-        fromService:
-          type: web
-          name: chat-client
-          property: url
+        sync: false # Paste your Public Client URL here after deployment (e.g. https://chat-client.onrender.com)
       - key: REDIS_URL
         fromService:
           type: redis
@@ -34,12 +31,7 @@ services:
     runtime: docker
     dockerContext: client
     dockerfilePath: client/Dockerfile
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: chat-server
-          property: url
+    # Note: VITE_API_URL is not needed here as Nginx proxies /api requests locally
 
   # Managed Redis
   - type: redis
