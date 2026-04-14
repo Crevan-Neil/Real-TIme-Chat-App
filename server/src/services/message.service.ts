@@ -62,7 +62,7 @@ export const sendMessageService = async (userId: string, body: {
     await chat.save();
 
     // websocket emit the last messsage to the chat room
-    emitNewMessageToChatRoom(userId,chatId, newMessage);
+    await emitNewMessageToChatRoom(userId,chatId, newMessage);
     //websocket emit the last message to members (personal room user)
     const allParticipantIds = chat.participants.map((id)=>id.toString());
     emitLastMessageToParticipants(allParticipantIds, chatId, newMessage);
