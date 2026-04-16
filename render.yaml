@@ -15,27 +15,15 @@ services:
         sync: false # Set this in the Render Dashboard
       - key: JWT_SECRET
         generateValue: true
-      - key: FRONTEND_ORIGIN
-        sync: false # Paste your Public Client URL here after deployment (e.g. https://chat-client.onrender.com)
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: chat-redis
-          property: connectionString
-      # Add other keys like CLOUDINARY if needed
-      # - key: CLOUDINARY_CLOUD_NAME
-      #   sync: false
+        sync: false # Get a free URL from Upstash.com
+      - key: FRONTEND_ORIGIN
+        sync: false # Paste your Public Client URL here after deployment
 
-  # Frontend Client
+  # Frontend Client (Nginx)
   - type: web
     name: chat-client
     plan: free
     runtime: docker
     dockerContext: client
     dockerfilePath: client/Dockerfile
-    # Note: VITE_API_URL is not needed here as Nginx proxies /api requests locally
-
-  # Managed Redis
-  - type: redis
-    name: chat-redis
-    ipAllowList: [] # Only allow internal traffic
