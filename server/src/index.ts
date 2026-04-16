@@ -41,13 +41,7 @@ app.get("/health", asyncHandler(async (req: Request, res: Response) => {
     })
 }))
 
-if(Env.NODE_ENV === "production"){
-    const clientPath= path.resolve(__dirname, "../../client/dist");
-    app.use(express.static(clientPath));
-    app.get(/^(?!\/api).*/, (req:Request, res:Response)=>{
-        res.sendFile(path.join(clientPath, "index.html"));
-    })
-}
+// No longer serving static files from Express (Nginx handles this)
 
 server.listen(Env.PORT, async() => {
     await connectDatabase();
