@@ -12,13 +12,21 @@ services:
       - key: NODE_ENV
         value: production
       - key: MONGO_URI
-        sync: false # Set this in the Render Dashboard
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: REDIS_URL
-        sync: false # Get a free URL from Upstash.com
+        sync: false
       - key: FRONTEND_ORIGIN
-        sync: false # Paste your Public Client URL here after deployment
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: GOOGLE_GENERATIVE_AI_API_KEY
+        sync: false
 
   # Frontend Client (Nginx)
   - type: web
