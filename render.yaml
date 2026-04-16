@@ -2,6 +2,7 @@ services:
   # Backend Server
   - type: web
     name: chat-server
+    plan: free
     runtime: docker
     dockerContext: server
     dockerfilePath: server/Dockerfile
@@ -28,6 +29,7 @@ services:
   # Frontend Client
   - type: web
     name: chat-client
+    plan: free
     runtime: docker
     dockerContext: client
     dockerfilePath: client/Dockerfile
